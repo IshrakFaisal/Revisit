@@ -1,0 +1,3 @@
+Read AGENTS.md and docs, inspect actual source/tests/Git diff. Implement ONE end-to-end vertical slice: user submits a valid supported X or GitHub URL, title and required intention, priority, and chosen trigger site; item saves locally; list reflects it; app restart preserves it; user can mark Done. Use real persistence, not in-memory demo data. Implement URL validation, duplicate handling and storage errors. Domain logic must be separate from Flutter widgets/platform code.
+
+Add deterministic domain tests, widget tests and one app integration test if the environment supports it. Run format/analyze/test/build checks; never weaken failing tests just to pass. Verify real UI manually where device tools exist. Stop after this slice and report evidence/limitations.

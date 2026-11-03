@@ -1,0 +1,13 @@
+Read AGENTS.md and all docs/*.md. This repository is for Revisit, a Flutter Android + Windows local-first intention/bookmark app. Do not implement the full product yet.
+
+TASK: inspect the actual Git state, directory contents, SDKs/toolchains (`flutter doctor -v`, `flutter devices` if available), and current dependencies. Confirm/adjust the proposed architecture in docs with evidence. In particular, research from available platform SDK/docs and then propose the smallest verifiable proof of one genuine context event: on Windows Chrome, visiting x.com/github.com via a companion browser integration; or on Android, permissioned foreground X app usage detection. A manual test button is not a genuine event.
+
+DELIVER:
+- Repo/toolchain findings and what remains unverified.
+- MVP acceptance criteria and clear platform support matrix.
+- Concrete event pipeline and fallback for denied permission.
+- Minimal repository structure/dependency decisions and why.
+- A short, ordered milestone plan with test gates and demo risks.
+- If simple verification commands were run, their exact outcomes.
+
+Never assert Android app-detection/background notifications or desktop browser-event observation work without proof. Avoid adding full infrastructure or placeholder UIs. Stop and request plan approval before large implementation changes.

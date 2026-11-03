@@ -1,0 +1,5 @@
+Read AGENTS.md and docs, inspect repository and any approved plan. Implement ONLY the smallest Flutter Android+Windows application foundation and tests. Reuse existing files; do not overwrite unrelated work. Use one coherent shared app, minimal packages, adaptive navigation/empty state, local persistence abstraction, and clear build/setup instructions. Add an injectable clock and context event interface for later testing, without pretending it is a live integration.
+
+Definition of Done: Windows Flutter app boots if toolchain available; an Android target at least builds if toolchain available; `flutter analyze`, `flutter test`, format and relevant build checks run; README lists real steps; UI has no dead controls. If a platform can't be built, document exact cause and required manual check.
+
+Do not implement cloud sync, AI, native X scraping, or third-party automation. Report changed files, commands/results, limitations and next task.
