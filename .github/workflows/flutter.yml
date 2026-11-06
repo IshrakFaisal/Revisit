@@ -1,0 +1,33 @@
+name: Flutter
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Install Flutter 3.47.9
+        run: |
+          git clone --depth 1 --branch 3.47.9 https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - name: Resolve locked dependencies
+        run: flutter --suppress-analytics pub get --enforce-lockfile
+      - name: Verify generated Drift schema
+        run: |
+          dart run build_runner build
+          git diff --exit-code -- lib/data/bookmark_store.g.dart
+      - name: Format
+        run: dart format --output=none --set-exit-if-changed lib test integration_test
+      - name: Analyze
+        run: flutter --suppress-analytics analyze --no-pub
+      - name: Test
+        run: flutter --suppress-analytics test --no-pub

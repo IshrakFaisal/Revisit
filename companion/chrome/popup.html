@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Revisit</title>
+<style>
+body { font: 14px system-ui; width: 300px; padding: 14px; color: #182a25; }
+button { padding: 10px; margin: 6px 0; width: 100%; }
+p { line-height: 1.45; }
+</style>
+<h1>Revisit</h1>
+<button id="save">Save this page to Revisit</button>
+<p id="capture-status" role="status"></p>
+<p>For a post in a feed, right-click its timestamp or permalink and choose <strong>Save link to Revisit</strong>. Confirm the draft and save it in the app.</p>
+<p>Keep Revisit running to receive context arrivals. Closing it stops delivery; arrivals are not queued.</p>
+<p>On X or Facebook, Revisit can offer to add a post after you use the site's Bookmark or Save post button. Refresh the page after granting access. If the prompt doesn't appear, use the explicit Save action or permalink menu.</p>
+<p>Automatic detection sends only X/Facebook/GitHub context and event IDs/timing. It requires site access. Saved URLs are not retained by the extension.</p>
+<button id="enable">Enable X, Facebook and GitHub detection</button>
+<button id="disable">Disable detection</button>
+<p id="permission" role="status"></p>
+<p>Last delivery status:</p>
+<p id="status" role="status"></p>
+<script type="module" src="popup.js"></script>
+</html>

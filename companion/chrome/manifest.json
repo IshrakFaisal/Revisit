@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "Revisit",
+  "version": "0.5.0",
+  "description": "Save supported links to Revisit and send authorized foreground X, Facebook and GitHub arrivals to the running local app.",
+  "minimum_chrome_version": "102",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4AIANsX/ZKQgQO4C+9OxiI98/f/MKDIb4eOl1nfPUcLTVehGZ0wWjND5yy5SC5pXdX/AQAz43Z3wVMDAoqQ3C+howNkEaIsl8YUwl39L7WGec2AQT62pdTC/jjuxSstnpPIO4v3/gvBQOQ0oMKveZIjUmGsHGzBtLINMGOfa3ToQwtBL74VUWQBmvNbUFoAAzEpkKpNo12dy8IXg4Q+yTStysTgO8EJlnap3fabiZVR4bQCeEqCwVXhMOdDjdy9oQ8PZQQuJ/oaEiC0lwAfagAcL15oXb/+0HmNvMPIp3bGtFwpcM5cr0WjpJfCM/fLfikEJXNex1f6hVYuVt6oVwQIDAQAB",
+  "permissions": ["nativeMessaging", "storage", "activeTab", "contextMenus", "scripting"],
+  "optional_host_permissions": ["https://x.com/*", "https://www.x.com/*", "https://twitter.com/*", "https://www.twitter.com/*", "https://mobile.twitter.com/*", "https://facebook.com/*", "https://www.facebook.com/*", "https://m.facebook.com/*", "https://mbasic.facebook.com/*", "https://github.com/*", "https://www.github.com/*", "https://gist.github.com/*"],
+  "background": { "service_worker": "worker.js", "type": "module" },
+  "action": { "default_popup": "popup.html" },
+  "incognito": "not_allowed"
+}
