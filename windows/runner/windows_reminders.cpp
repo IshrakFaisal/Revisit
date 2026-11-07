@@ -86,6 +86,7 @@ struct WindowsReminders::State {
       std::string response;
       revisit::Event event;
       revisit::Capture capture;
+      revisit::BrowserQuery query;
       if (revisit::trusted_desktop_client(pipe) && revisit::receive_pipe_frame(pipe, input)) {
         bool sent = false;
         if (revisit::parse_event(input, revisit::now_ms(), event)) {
@@ -108,6 +109,16 @@ struct WindowsReminders::State {
             sent = Emit("contextArrival", std::move(data));
             status = sent ? "accepted" : "busy";
           }
+        } else if (revisit::parse_browser_query(input, revisit::now_ms(), query)) {
+          auto reply = std::make_shared<std::promise<std::string>>();
+          auto result = reply->get_future();
+          if (Emit("browserQuery", {{Value("version"), Value(1)}, {Value("kind"), Value(query.kind)},
+              {Value("target"), Value(query.target)}, {Value("cursor"), Value(query.cursor)},
+              {Value("eventId"), Value(query.event_id)}, {Value("occurredAt"), Value(query.occurred_at)}}, reply) &&
+              result.wait_for(std::chrono::milliseconds(3500)) == std::future_status::ready) {
+            response = result.get();
+          }
+          status = "busy";
         } else if (revisit::parse_capture(input, revisit::now_ms(), capture)) {
           sent = Emit("captureRequested", {
             {Value("version"), Value(1)}, {Value("kind"), Value(capture.kind)},

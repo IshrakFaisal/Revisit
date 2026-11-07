@@ -52,7 +52,7 @@ add_executable(revisit_desktop_host
   "../../companion/windows_host/peer_identity.cpp")
 apply_standard_settings(revisit_desktop_host)
 target_compile_definitions(revisit_desktop_host PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX)
-target_link_libraries(revisit_desktop_host PRIVATE advapi32 wintrust crypt32)
+target_link_libraries(revisit_desktop_host PRIVATE advapi32 wintrust crypt32 user32)
 add_dependencies(${BINARY_NAME} revisit_desktop_host)
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 

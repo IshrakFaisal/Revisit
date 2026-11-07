@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../application/reminder_coordinator.dart';
 import '../domain/bookmark.dart';
 import '../domain/browser_capture.dart';
+import '../domain/browser_query.dart';
 import '../domain/reminders.dart';
 
 /// Sends a bounded request immediately. Native Windows work runs on a worker;
@@ -31,6 +32,7 @@ final class WindowsReminders implements ReminderDelivery {
   Future<void>? _disposal;
   String? currentReceiverStatus;
   Future<String> Function(ContextArrival)? onBrowserArrival;
+  Future<String> Function(BrowserQuery)? onBrowserQuery;
   Completer<void>? _receiverStopped;
 
   Stream<int> get activations => _activations.stream;
@@ -103,7 +105,11 @@ final class WindowsReminders implements ReminderDelivery {
     if (_closed) return null;
     final data = call.arguments;
     if (data is! Map) return null;
-    if (call.method == 'captureRequested') {
+    if (call.method == 'browserQuery') {
+      final query = BrowserQuery.parse(data, clock());
+      if (query != null) return onBrowserQuery?.call(query);
+      return null;
+    } else if (call.method == 'captureRequested') {
       final capture = BrowserCapture.parse(data, clock());
       if (capture != null) _captures.add(capture);
     } else if (call.method == 'contextArrival' ||

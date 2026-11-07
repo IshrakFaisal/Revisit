@@ -2,6 +2,28 @@
 
 Never disable tests or weaken assertions for green results. Fake events/clocks belong only in automated tests.
 
+## Priority chooser — 2026-11-07
+
+Extension v0.6.0 adds the requested top-right Yes → priority chooser → selected post flow. A read-only list/open protocol stays behind the existing authenticated native transport. No bookmark schema, dependencies, registry or permissions changed. Each list page fits the existing 4 KiB frame; Show more reaches subsequent items. IDs/titles/priorities are disclosed only after Yes. Item clicks re-read the current record; list reads do not change cooldowns. The user confirmed the preceding v0.5.1 live reminder fix worked; this new chooser still needs a live Brave trial.
+
+Changed areas: content script and browser query adapter/tests; native protocol/host/runner; Dart query validation, store-backed chooser, platform/session wiring; README/product/architecture/plan. Capture handoff and placement are separate feature commits. The chooser is its own feature commit.
+
+| Command | Actual result |
+| --- | --- |
+| `dart format --output=none --set-exit-if-changed lib test integration_test` | Passed; 35 files, no changes |
+| `flutter --suppress-analytics analyze --no-pub` | No issues; 52.1 seconds |
+| `flutter --suppress-analytics test --no-pub --reporter expanded test/browser_bookmarks_test.dart` | Both new query/persistence tests passed |
+| `flutter --suppress-analytics test --no-pub --reporter expanded` | All 115 tests passed, including the chooser session/channel test |
+| `node --test companion/chrome/test/*.test.js companion/windows_host/test/desktop_host.test.mjs` | All 31 passed |
+| `./tool/build-proof.ps1 -VsTools 'D:\RevisitTools\BuildTools\VC\Auxiliary\Build\vcvars64.bat'` | Native build and CTest 5/5 passed |
+| `flutter --suppress-analytics build windows --release --no-pub` | Passed; 56.6 seconds |
+| `./tool/check-windows-package.ps1 -BuildDirectory build/windows/x64` | Passed |
+| `flutter --suppress-analytics test --no-pub --reporter expanded integration_test/windows_handoff_test.dart -d windows` | Both real Windows invalid-payload/receiver-lifecycle tests passed; Debug build 31.4 seconds |
+
+The updated Release app was launched and its UI showed the persisted library and listening receiver. Brave must reload extension 0.6.0 and refresh X/Facebook to use the new content script. The chooser's actual site click and capture foreground transfer still need user verification; the native integration test does not claim those behaviors.
+
+Tests verify ordering across Unicode-filled pages, wrong contexts, completed/future-snoozed exclusions, expired snooze inclusion, unchanged cooldowns, fresh deleted/completed lookup, revoked/mismatched sender access, No without data fetch, no navigation on Yes alone, explicit selected-item navigation, unsafe-URL rejection, pagination, and capture error retry. Browser APIs/DOM in these tests are controlled fixtures, not live-site evidence. Android was not rebuilt for this Windows/browser feature. The earlier reported Flutter compiler error was a competing test-cache copy; the completed previous sequential log and this run both pass. Tests were not weakened.
+
 ## Capture handoff — 2026-11-07
 
 The user requested direct app presentation after Add/Yes, without a second draft message. The host transfers foreground permission to the authenticated desktop receiver only for explicit captures, and the content script closes the successful Add prompt. Failure remains visible/retryable. `node --test companion/chrome/test/*.test.js companion/windows_host/test/desktop_host.test.mjs` passed 29 checks; `./tool/build-proof.ps1 -VsTools 'D:\RevisitTools\BuildTools\VC\Auxiliary\Build\vcvars64.bat'` built successfully and passed CTest 5/5. Actual focus transfer remains subject to Windows and needs a live click check.

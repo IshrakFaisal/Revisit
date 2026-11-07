@@ -1,6 +1,7 @@
 import { contextOf, dueEvent, DWELL_MS, HOSTS, initialState, observe, supportedSite } from "./context.js";
 import { sendCapture } from "./capture.js";
 import { handleSiteSave, mayOfferSiteSave, syncSiteSaveScript } from "./site-save-worker.js";
+import { queryBookmarks } from "./bookmark-list.js";
 
 const HOST = "com.revisit.context";
 const PAGE_WAIT_MS = 45000;
@@ -152,6 +153,10 @@ chrome.runtime.onInstalled.addListener(refreshSiteSaveScript);
 chrome.permissions.onAdded.addListener(refreshSiteSaveScript);
 chrome.permissions.onRemoved.addListener(refreshSiteSaveScript);
 chrome.runtime.onMessage.addListener((request, sender, respond) => {
+  if (["listBookmarks", "openBookmark"].includes(request?.kind)) {
+    queryBookmarks(chrome, request, sender).then(respond, () => respond({ status: "unavailable" }));
+    return true;
+  }
   if (request?.kind === "canOfferSiteSave") {
     mayOfferSiteSave(chrome, sender).then(respond, () => respond(false));
     return true;

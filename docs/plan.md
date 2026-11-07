@@ -19,3 +19,5 @@ Toast work remains in the Windows integration milestone. Milestone 4 was separat
 The user separately authorized browser capture and Facebook support on 2026-11-06. [The focused correction report](capture-reminder-fix.md) records the explicit extension capture path, three-site contexts, 109 passing Flutter tests and live acceptance progress. This expansion continues the Windows experience. Android sharing remains its own pending milestone.
 
 After each milestone report changed files, exact commands/results, accepted behavior, unsupported/unrun checks, limitations and next task. Never mark a live gate complete from synthetic events.
+
+The 2026-11-07 follow-up confirms the previous in-page reminder fix worked for the user and authorizes a direct capture handoff, top-right placement, and a priority-ordered current-site chooser after Yes. These changes remain in Milestone 5. Full live matrix and physical Android sharing remain separate gates.

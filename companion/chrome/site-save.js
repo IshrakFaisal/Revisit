@@ -90,7 +90,9 @@
     style.textContent = `:host{all:initial;position:fixed;right:16px;top:16px;z-index:2147483647}
       section{box-sizing:border-box;width:min(320px,calc(100vw - 32px));background:#fff;color:#172c23;
       font:15px/1.45 system-ui;padding:16px;border:1px solid #60796e;border-radius:12px;
-      box-shadow:0 4px 20px #0003} p{margin:0 0 10px} button{font:inherit;margin:0 8px 0 0;
+      box-shadow:0 4px 20px #0003;max-height:calc(100vh - 32px);overflow:auto} p{margin:0 0 10px}
+      .bookmark{display:block;width:100%;text-align:left;margin:8px 0;overflow-wrap:anywhere}
+      button{font:inherit;margin:0 8px 0 0;
       padding:6px 16px;border:1px solid #547568;border-radius:6px;background:#f0f7f3;color:#172c23;cursor:pointer}`;
     const panel = document.createElement("section");
     panel.setAttribute("aria-label", "Revisit bookmark prompt");
@@ -113,7 +115,67 @@
       yes.disabled = true;
       try {
         const result = await accept();
+        if (!host.isConnected || location.href !== page) return close();
         if (result?.close) return close();
+        if (result?.browse) {
+          clearTimeout(expiry);
+          yes.remove();
+          no.textContent = "Close";
+          heading.textContent = onX ? "Your X bookmarks" : "Your Facebook bookmarks";
+          const list = document.createElement("div");
+          const feedback = document.createElement("p");
+          feedback.setAttribute("role", "status");
+          const more = document.createElement("button");
+          more.textContent = "Show more";
+          const seen = new Set();
+          let cursor = "";
+          const live = () => host.isConnected && location.href === page;
+          async function load() {
+            more.disabled = true;
+            feedback.textContent = "Loading bookmarks…";
+            try {
+              const reply = await chrome.runtime.sendMessage({ kind: "listBookmarks", cursor });
+              if (!live()) return close();
+              if (reply?.status !== "bookmarks" || !Array.isArray(reply.items) ||
+                  !(reply.cursor === null || (typeof reply.cursor === "string" && /^[0-2]:[1-9][0-9]{0,14}$/.test(reply.cursor)))) throw Error();
+              if (!reply.items.every(item => Number.isSafeInteger(item.id) && item.id > 0 &&
+                  typeof item.title === "string" && [...item.title].length <= 200 &&
+                  ["high", "medium", "low"].includes(item.priority))) throw Error();
+              for (const item of reply.items) {
+                if (seen.has(item.id)) continue;
+                seen.add(item.id);
+                const button = document.createElement("button");
+                button.setAttribute("class", "bookmark");
+                button.textContent = `${item.priority[0].toUpperCase() + item.priority.slice(1)} · ${item.title}`;
+                button.addEventListener("click", async event => {
+                  if (!event.isTrusted || button.disabled || !live()) return;
+                  button.disabled = true;
+                  try {
+                    const opened = await chrome.runtime.sendMessage({ kind: "openBookmark", cursor: String(item.id) });
+                    if (!live()) return close();
+                    if (opened?.status !== "open") throw Error();
+                    const url = new URL(opened.url);
+                    if (!["https:", "http:"].includes(url.protocol) || url.username || url.password) throw Error();
+                    close(); location.assign(url.href);
+                  } catch {
+                    feedback.textContent = "This bookmark could not open. It may have changed; check Revisit and try again.";
+                    button.disabled = false;
+                  }
+                });
+                list.append(button);
+              }
+              feedback.textContent = seen.size ? "Choose a bookmark to open its post." : "No active bookmarks for this site.";
+              if (reply.cursor === null) more.remove();
+              else if (reply.cursor === cursor) throw Error();
+              else cursor = reply.cursor;
+            } catch { feedback.textContent = "Could not load bookmarks. Keep Revisit running and try again."; }
+            more.disabled = false;
+          }
+          more.addEventListener("click", event => { if (event.isTrusted && !more.disabled) void load(); });
+          panel.append(list, feedback, more);
+          await load();
+          return;
+        }
         if (result?.navigate) {
           close();
           location.assign(result.navigate);
@@ -144,7 +206,7 @@
       let url;
       try { url = new URL(request.url); } catch { return false; }
       if (!["https:", "http:"].includes(url.protocol) || url.username || url.password) return false;
-      respond(showPrompt(request.page, "You saved a post in Revisit. See it now?", () => ({ navigate: url.href })));
+      respond(showPrompt(request.page, "You have saved bookmarks in Revisit. See them now?", () => ({ browse: true })));
     }
     return false;
   });

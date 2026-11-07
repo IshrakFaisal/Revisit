@@ -124,6 +124,40 @@ bool parse_event(const std::string& json, std::int64_t now, Event& result) {
   result = event;
   return true;
 }
+bool parse_browser_query(const std::string& json, std::int64_t now, BrowserQuery& result) {
+  if (json.empty() || json.size() > kMaxMessage || now < 30000 ||
+      now > std::numeric_limits<std::int64_t>::max() - 5000) return false;
+  Parser parser(json);
+  BrowserQuery query;
+  std::set<std::string> keys;
+  std::int64_t version = 0;
+  if (!parser.take('{')) return false;
+  for (int i = 0; i < 6; ++i) {
+    if (i && !parser.take(',')) return false;
+    std::string key;
+    if (!parser.text(key) || !keys.insert(key).second || !parser.take(':')) return false;
+    if (key == "version") { if (!parser.number(version)) return false; }
+    else if (key == "kind") { if (!parser.text(query.kind)) return false; }
+    else if (key == "target") { if (!parser.text(query.target)) return false; }
+    else if (key == "cursor") { if (!parser.text(query.cursor)) return false; }
+    else if (key == "eventId") { if (!parser.text(query.event_id)) return false; }
+    else if (key == "occurredAt") { if (!parser.number(query.occurred_at)) return false; }
+    else return false;
+  }
+  if (!parser.take('}') || !parser.end() || version != 1 || !uuid(query.event_id) ||
+      (query.target != "x" && query.target != "facebook") ||
+      query.occurred_at < now - 30000 || query.occurred_at > now + 5000) return false;
+  auto id = query.cursor;
+  if (query.kind == "list") {
+    if (!id.empty()) {
+      if (id.size() < 3 || id[0] < '0' || id[0] > '2' || id[1] != ':') return false;
+      id = id.substr(2);
+    }
+  } else if (query.kind != "open" || id.empty()) return false;
+  if (!id.empty() && (id.size() > 15 || id[0] == '0' || id.find_first_not_of("0123456789") != std::string::npos)) return false;
+  result = query;
+  return true;
+}
 std::string frame(const std::string& payload) {
   if (payload.empty() || payload.size() > kMaxMessage) return {};
   std::string data(4, '\0');

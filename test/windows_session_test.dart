@@ -70,6 +70,59 @@ void main() {
   });
   tearDown(() => messenger.setMockMethodCallHandler(channel, null));
   test(
+    'browser chooser channel reads SQLite and opens only the requested context',
+    () async {
+      final db = BookmarkStore(NativeDatabase.memory());
+      final id = await db.createBookmark(f.sample(trigger: TriggerContext.x));
+      final now = DateTime.now();
+      final session = WindowsSession(
+        db,
+        WindowsReminders(clock: () => now),
+        () => now,
+      );
+      await session.start();
+      addTearDown(() async {
+        await session.close();
+        await db.close();
+      });
+      Future<Map> query(String kind, String target, String cursor) async {
+        final result = Completer<Object?>();
+        const codec = StandardMethodCodec();
+        messenger.handlePlatformMessage(
+          channel.name,
+          codec.encodeMethodCall(
+            MethodCall('browserQuery', {
+              'version': 1,
+              'kind': kind,
+              'target': target,
+              'cursor': cursor,
+              'eventId': '01234567-89ab-cdef-0123-456789abcdef',
+              'occurredAt': now.millisecondsSinceEpoch,
+            }),
+          ),
+          (data) => result.complete(codec.decodeEnvelope(data!)),
+        );
+        return jsonDecode((await result.future) as String) as Map;
+      }
+
+      expect((await query('list', 'x', ''))['items'], [
+        {
+          'id': id,
+          'title': f.sample().title,
+          'priority': f.sample().priority.name,
+        },
+      ]);
+      expect((await query('list', 'facebook', ''))['items'], isEmpty);
+      expect(await query('open', 'facebook', '$id'), {'status': 'unavailable'});
+      expect(await query('open', 'x', '$id'), {
+        'status': 'open',
+        'url': f.sample().url,
+      });
+      expect((await db.readReminderState()).lastAttemptAt, isNull);
+      expect(calls, isNot(contains('submitNotification')));
+    },
+  );
+  test(
     'browser arrival offers the saved link without a Windows notification',
     () async {
       final db = BookmarkStore(NativeDatabase.memory());

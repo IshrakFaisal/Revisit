@@ -8,7 +8,7 @@ const code = readFileSync(new URL("../site-save.js", import.meta.url), "utf8");
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
 // Small DOM fixture for the actual isolated content script. No site requests.
-function fixture(source, captureReply = "Draft sent to Revisit.") {
+function fixture(source, captureReply = "Draft sent to Revisit.", replies = {}) {
   const isX = source === "x";
   const url = isX ? "https://x.com/person/status/123" : "https://www.facebook.com/person/posts/123";
   let click, observer, onMessage, saved = false;
@@ -44,7 +44,11 @@ function fixture(source, captureReply = "Draft sent to Revisit.") {
     document: { body, visibilityState: "visible", createElement: () => new Element(),
       addEventListener: (_, callback) => { click = callback; }, querySelectorAll: () => saved ? [notice] : [] },
     MutationObserver: class { constructor(callback) { observer = callback; } observe() {} disconnect() {} },
-    chrome: { runtime: { id: "revisit", onMessage: { addListener: callback => { onMessage = callback; } }, sendMessage: async message => { messages.push(message); return message.kind === "canOfferSiteSave" ? true : captureReply; } } },
+    chrome: { runtime: { id: "revisit", onMessage: { addListener: callback => { onMessage = callback; } }, sendMessage: async message => {
+      messages.push(message);
+      if (replies[message.kind]) return replies[message.kind](message);
+      return message.kind === "canOfferSiteSave" ? true : captureReply;
+    } } },
   });
   return {
     url, messages, opened,
@@ -55,18 +59,50 @@ function fixture(source, captureReply = "Draft sent to Revisit.") {
   };
 }
 
-test("the in-page reminder opens the exact saved post only on Yes", async () => {
-  const page = fixture("x");
+test("Yes shows a priority list and only an item click opens its exact saved post", async () => {
+  const savedUrl = "https://x.com/saved/status/456";
+  const page = fixture("x", undefined, {
+    listBookmarks: () => ({ status: "bookmarks", items: [
+      { id: 2, title: "Important <post>", priority: "high" },
+      { id: 1, title: "Later", priority: "low" }], cursor: null }),
+    openBookmark: () => ({ status: "open", url: savedUrl }),
+  });
   page.reminder("javascript:alert(1)");
   assert.equal(page.panel(), undefined);
-  const savedUrl = "https://x.com/saved/status/456";
   page.reminder(savedUrl);
-  assert.match(page.panel().children[0].textContent, /See it now/);
+  assert.match(page.panel().children[0].textContent, /See them now/);
   page.panel().children[2].events.click({ isTrusted: true });
   assert.deepEqual(page.opened, []);
+  assert.deepEqual(page.messages, [], "No must not read bookmarks");
   page.reminder(savedUrl);
   await page.panel().children[1].events.click({ isTrusted: true });
+  assert.deepEqual(page.opened, [], "Yes opens a chooser rather than navigating");
+  const items = page.panel().children[3].children;
+  assert.deepEqual(items.map(item => item.textContent), ["High · Important <post>", "Low · Later"]);
+  await items[0].events.click({ isTrusted: false });
+  assert.deepEqual(page.opened, []);
+  await items[0].events.click({ isTrusted: true });
+  assert.equal(page.messages.at(-1).cursor, "2");
   assert.deepEqual(page.opened, [savedUrl]);
+});
+
+test("chooser paginates and preserves errors without unsafe navigation", async () => {
+  const page = fixture("facebook", undefined, {
+    listBookmarks: request => ({ status: "bookmarks", items: [
+      { id: request.cursor ? 2 : 1, title: "Saved post", priority: request.cursor ? "low" : "high" }], cursor: request.cursor ? null : "0:1" }),
+    openBookmark: () => ({ status: "open", url: "javascript:alert(1)" }),
+  });
+  page.reminder("https://www.facebook.com/person/posts/123");
+  await page.panel().children[1].events.click({ isTrusted: true });
+  page.panel().children[5].events.click({ isTrusted: true });
+  await tick();
+  const items = page.panel().children[3].children;
+  assert.equal(items.length, 2);
+  assert.equal(page.messages[1].cursor, "0:1");
+  await items[0].events.click({ isTrusted: true });
+  assert.deepEqual(page.opened, []);
+  assert.match(page.panel().children[4].textContent, /could not open/);
+  assert.equal(items[0].disabled, false);
 });
 
 for (const source of ["x", "facebook"]) {

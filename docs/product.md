@@ -8,7 +8,7 @@ Approved 2026-11-03. Android and Windows share an application foundation. The jo
 1. Share (Android) or paste a supported HTTP(S) link. Enter a title and intention, each required and 1–200 Unicode code points after trimming.
 2. Select priority High/Medium/Low (default Medium), source X/Facebook/GitHub/Other (default Other), and explicit trigger X/Facebook/GitHub. Source is user-editable and independent of URL and trigger.
 3. Persist locally. Canonical duplicates, including completed items, offer the existing item without silent overwrite.
-4. On Windows, a genuine authorized Brave or Chrome arrival evaluates eligibility while Revisit runs, including minimized. X and Facebook show an in-page prompt. Yes opens the saved link in that tab and No dismisses the prompt. GitHub uses the Windows notification path.
+4. On Windows, a genuine authorized Brave or Chrome arrival evaluates eligibility while Revisit runs, including minimized. X and Facebook show an in-page prompt. Yes opens a priority-ordered bookmark chooser for that trigger site; clicking an item opens its saved link in the same tab. No dismisses the prompt. GitHub uses the Windows notification path.
 5. Open, snooze one hour/24 hours, or complete. Open does not complete. Edit preserves lifecycle state. Delete requires confirmation.
 6. State, settings and cooldown metadata survive restart.
 
@@ -44,3 +44,7 @@ All in-page Revisit prompts appear at the top right of the viewport (16 px inset
 Capture sends a selected URL only after a user action. Automatic context events continue to carry only site context, IDs and timing. Automatic monitoring requires optional site permissions even when capture has temporary activeTab access. Capture links are limited to 3,072 ASCII encoded URL characters within the existing 4 KiB transport. Manual capture retains its existing 4,096-character limit.
 
 Closing the desktop app stops both delivery and capture reception. Minimized operation is the supported background workflow. Captures offered while another editor or routed detail is open receive a busy status in the app and require a fresh Save action after closing that view. No capture saves automatically.
+
+## Site bookmark chooser approved 2026-11-07
+
+After Yes on a social reminder, show all active bookmarks whose trigger matches the current X/Facebook context, ordered High, Medium, Low, then ID. Recently reminded items remain available in this explicitly requested list. Completed and currently snoozed items are excluded; expired snoozes are included. Show more exposes subsequent pages without a total-item cutoff. List reads do not change reminder cooldowns or completion. A click re-reads the selected item before returning its current URL. No loads no bookmark list. The initial automatic prompt still follows the existing arrival and interruption policy.

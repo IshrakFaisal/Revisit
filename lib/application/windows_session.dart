@@ -11,6 +11,8 @@ import '../domain/bookmark.dart';
 import '../domain/bookmark_url.dart';
 import '../platform/windows_reminders.dart';
 import 'reminder_coordinator.dart';
+import 'browser_bookmarks.dart';
+import '../domain/browser_query.dart';
 
 /// One owner for the library store session, independent of screen layout.
 final class WindowsSession extends ChangeNotifier {
@@ -42,6 +44,7 @@ final class WindowsSession extends ChangeNotifier {
   Future<void> start() => _startup ??= _start();
   Future<void> _start() async {
     adapter.onBrowserArrival = _browserArrival;
+    adapter.onBrowserQuery = _browserQuery;
     _subscriptions.add(
       adapter.receiverStatus.listen((status) {
         receiver = status == 'listening'
@@ -223,6 +226,19 @@ final class WindowsSession extends ChangeNotifier {
     return response;
   }
 
+  Future<String> _browserQuery(BrowserQuery query) {
+    if (_closed || _work.length >= 32) return Future.value('{"status":"busy"}');
+    final response = browserBookmarks(
+      store,
+      query,
+      clock(),
+    ).catchError((Object _) => '{"status":"busy"}');
+    final work = response.then<void>((_) {});
+    _work.add(work);
+    unawaited(work.whenComplete(() => _work.remove(work)));
+    return response;
+  }
+
   Future<String> _offerInBrowser(ContextArrival event) async {
     final delivery = _BrowserPromptDelivery(clock);
     try {
@@ -253,6 +269,7 @@ final class WindowsSession extends ChangeNotifier {
   Future<void> _close() async {
     _closed = true;
     adapter.onBrowserArrival = null;
+    adapter.onBrowserQuery = null;
     for (final subscription in _subscriptions) {
       await subscription.cancel();
     }

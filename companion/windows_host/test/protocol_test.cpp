@@ -10,6 +10,25 @@ int main() {
   const std::int64_t now = 1700000000000;
   const std::string valid = R"({"version":1,"target":"github","eventId":"01234567-89ab-cdef-0123-456789abcdef","visitId":"11234567-89ab-cdef-0123-456789abcdef","occurredAt":1700000000000})";
   revisit::Event event;
+  revisit::BrowserQuery query;
+  const std::string list = R"({"version":1,"kind":"list","target":"x","cursor":"","eventId":"01234567-89ab-cdef-0123-456789abcdef","occurredAt":1700000000000})";
+  require(revisit::parse_browser_query(list, now, query), "chooser request rejected");
+  require(!revisit::parse_browser_query(list, now + 30001, query), "stale chooser accepted");
+  auto open = list;
+  open.replace(open.find("\"list\""), 6, "\"open\"");
+  require(!revisit::parse_browser_query(open, now, query), "empty open ID accepted");
+  open.replace(open.find("\"cursor\":\"\""), 11, "\"cursor\":\"12\"");
+  require(revisit::parse_browser_query(open, now, query) && query.kind == "open" && query.cursor == "12", "open query rejected");
+  for (const auto& cursor : {"0:1", "1:15", "2:999"}) {
+    auto page = list;
+    page.replace(page.find("\"cursor\":\"\""), 11, "\"cursor\":\"" + std::string(cursor) + "\"");
+    require(revisit::parse_browser_query(page, now, query), "pagination cursor rejected");
+  }
+  for (const auto& cursor : {"0:", "3:1", "0:01", "-1", "0:1000000000000000"}) {
+    auto page = list;
+    page.replace(page.find("\"cursor\":\"\""), 11, "\"cursor\":\"" + std::string(cursor) + "\"");
+    require(!revisit::parse_browser_query(page, now, query), "invalid pagination cursor accepted");
+  }
   auto facebook = valid;
   facebook.replace(facebook.find("github"), 6, "facebook");
   require(revisit::parse_event(facebook, now, event), "Facebook arrival rejected");

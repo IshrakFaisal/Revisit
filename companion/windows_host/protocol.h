@@ -19,6 +19,11 @@ struct Capture {
   std::string kind, url, source, event_id;
   std::int64_t occurred_at = 0;
 };
+struct BrowserQuery {
+  std::string kind, target, cursor, event_id;
+  std::int64_t occurred_at = 0;
+};
+bool parse_browser_query(const std::string& json, std::int64_t now, BrowserQuery& result);
 std::int64_t now_ms();
 bool parse_event(const std::string& json, std::int64_t now, Event& result);
 bool parse_capture(const std::string& json, std::int64_t now, Capture& result);
