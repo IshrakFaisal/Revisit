@@ -3,6 +3,7 @@ import { sendCapture } from "./capture.js";
 import { handleSiteSave, mayOfferSiteSave, syncSiteSaveScript } from "./site-save-worker.js";
 
 const HOST = "com.revisit.context";
+const PAGE_WAIT_MS = 45000;
 let chain = Promise.resolve();
 let timer;
 
@@ -36,8 +37,23 @@ async function reconcile(reset = false, closedTabId) {
   const target = contextOf(current);
   const state = { ...observe(previous, target, Date.now(), () => crypto.randomUUID()),
     tabId: target ? current.tabId : null };
-  const event = dueEvent(state, Date.now(), () => crypto.randomUUID());
+  let event = dueEvent(state, Date.now(), () => crypto.randomUUID());
   if (event) {
+    if (event.target === "x" || event.target === "facebook") {
+      // A document loading or an open Save prompt is not a delivery attempt.
+      // Wait only while the real visit remains current; never retry native I/O.
+      if (Date.now() - state.since >= PAGE_WAIT_MS) {
+        state.attempted = true;
+        await chrome.storage.session.set({ visit: state, status: "The page was not ready for a reminder. Leave the site and return to try again." });
+        return;
+      }
+      if (!await browserPageReady(current, event.target)) {
+        await chrome.storage.session.set({ visit: state, status: "Waiting for the page or its Save prompt to finish before checking reminders." });
+        timer = setTimeout(() => enqueue(), 500);
+        return;
+      }
+      event = dueEvent(state, Date.now(), () => crypto.randomUUID());
+    }
     // Persist BEFORE sending: worker failure must not replay an uncertain delivery.
     state.attempted = true;
     await chrome.storage.session.set({ visit: state });
@@ -60,19 +76,29 @@ async function reconcile(reset = false, closedTabId) {
   }
 }
 
+async function browserPageReady(current, target) {
+  const { tabId, url } = current;
+  if (!Number.isInteger(tabId)) return false;
+  const message = data => chrome.tabs.sendMessage(tabId, data, { frameId: 0 });
+  try {
+    let ready;
+    try {
+      ready = await message({ kind: "revisitReminderReady" });
+    } catch {
+      // Open tabs may predate the extension reload or optional host grant.
+      await chrome.scripting.executeScript({ target: { tabId }, files: ["site-save.js"] });
+      ready = await message({ kind: "revisitReminderReady" });
+    }
+    const latest = await snapshot();
+    return ready === true && latest?.tabId === tabId && latest.url === url && contextOf(latest) === target;
+  } catch {
+    return false;
+  }
+}
+
 async function showBrowserReminder(event, current) {
   const { tabId, url } = current;
-  if (!Number.isInteger(tabId)) return;
   const message = data => chrome.tabs.sendMessage(tabId, data, { frameId: 0 });
-  let ready;
-  try {
-    ready = await message({ kind: "revisitReminderReady" });
-  } catch {
-    // Open tabs may predate the extension reload or optional host grant.
-    await chrome.scripting.executeScript({ target: { tabId }, files: ["site-save.js"] });
-    ready = await message({ kind: "revisitReminderReady" });
-  }
-  if (!ready) return;
   const isSamePage = async () => {
     const latest = await snapshot();
     return latest?.tabId === tabId && latest.url === url && contextOf(latest) === event.target;

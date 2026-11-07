@@ -2,6 +2,12 @@
 
 Never disable tests or weaken assertions for green results. Fake events/clocks belong only in automated tests.
 
+## Social reminder readiness correction — 2026-11-07
+
+Three new worker regressions failed against v0.5.0: a busy Save prompt consumed the visit, a loading-document injection error could not recover, and page-readiness expiry had no useful status. Version 0.5.1 checks readiness before marking the visit attempted and bounds pre-handoff checks to 45 seconds. A fourth regression verifies navigation/permission cancellation. No native request is replayed; existing cooldowns are unchanged.
+
+`node --test companion/chrome/test/readiness.test.js` initially failed 3/4. After the correction, `node --test companion/chrome/test/*.test.js companion/windows_host/test/desktop_host.test.mjs` passed all 28 tests. These use controlled browser APIs and are not a real-site demonstration.
+
 ## GitHub application baseline — 2026-11-06
 
 The user authorized publishing the existing application and README to the already configured `IshrakFaisal/Revisit` repository. The baseline retains the starter history and captures the current implementation, tests, companions, CI and milestone evidence. README and AGENTS now require one verified feature per descriptive `type(scope): summary` commit; three requested features produce three feature commits. README also distinguishes implemented Android manual capture from pending sharing. No application behavior changed in this task.
