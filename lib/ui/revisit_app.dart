@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:revisit/data/bookmark_store.dart';
@@ -90,8 +89,7 @@ class _BookmarkLibraryState extends State<_BookmarkLibrary> {
     await store.recoverReminders(widget.clock());
     if (mounted &&
         identical(_store, store) &&
-        widget.enableWindowsIntegration &&
-        Platform.isWindows) {
+        widget.enableWindowsIntegration) {
       final session = WindowsSession(
         store,
         WindowsReminders(clock: widget.clock),

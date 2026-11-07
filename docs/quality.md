@@ -2,6 +2,29 @@
 
 Never disable tests or weaken assertions for green results. Fake events/clocks belong only in automated tests.
 
+## Linux CI platform selection fix — 2026-11-07
+
+GitHub Actions run [42340613758](https://github.com/IshrakFaisal/Revisit/actions/runs/42340613758) passed dependency resolution, generated-source verification, formatting and analysis, then failed with 97 passing and 18 failing tests. Its log shows that the Windows capture/session widget tests never created `WindowsIntegrationStatus` on the Ubuntu runner: the UI ignored their injected `enableWindowsIntegration: true` because it also checked `Platform.isWindows` directly.
+
+Platform selection now happens in production `createRevisitApp()`. The shared UI honors its existing injected integration flag, allowing the same mocked Windows channel tests to exercise capture, arrivals and activation on either host. Android production startup still disables Windows integration. No workflow steps, assertions, test cases or dependencies were removed or skipped. Two regressions verify production platform selection and that disabled integration makes no native calls.
+
+Changed files: `lib/application/startup.dart`, `lib/ui/revisit_app.dart`, `test/startup_test.dart`, `test/windows_session_test.dart`, `docs/architecture.md`, and this report.
+
+Verification used the existing `S:\Revisit` alias and `. ./tool/use-local-toolchain.ps1`, with the aliased Flutter bin first on process PATH.
+
+| Command | Actual result |
+| --- | --- |
+| `dart format lib/application/startup.dart lib/ui/revisit_app.dart test/startup_test.dart test/windows_session_test.dart` | Passed; four files, no changes |
+| `flutter --suppress-analytics test --no-pub --reporter expanded test/startup_test.dart test/windows_session_test.dart test/windows_capture_test.dart` | All 26 passed |
+| `dart format --output=none --set-exit-if-changed lib test integration_test` | Passed; 36 files, no changes |
+| `flutter --suppress-analytics analyze --no-pub` | Passed; no issues |
+| `flutter --suppress-analytics test --no-pub --reporter expanded` | All 117 passed on Windows |
+| `flutter --suppress-analytics build windows --release --no-pub` | Passed; 27.6 seconds |
+| `./tool/check-windows-package.ps1 -BuildDirectory build/windows/x64` | Passed |
+| `git diff --check` | Passed |
+
+The Linux runner result will be verified after publishing the fix. Android release and native integration builds were not rerun for this platform-selection correction. Live browser interactions and physical Android sharing are outside this CI correction; existing live acceptance gates remain open. The next verification step is the unchanged hosted Flutter workflow on the fix commit.
+
 ## Priority chooser — 2026-11-07
 
 Extension v0.6.0 adds the requested top-right Yes → priority chooser → selected post flow. A read-only list/open protocol stays behind the existing authenticated native transport. No bookmark schema, dependencies, registry or permissions changed. Each list page fits the existing 4 KiB frame; Show more reaches subsequent items. IDs/titles/priorities are disclosed only after Yes. Item clicks re-read the current record; list reads do not change cooldowns. The user confirmed the preceding v0.5.1 live reminder fix worked; this new chooser still needs a live Brave trial.

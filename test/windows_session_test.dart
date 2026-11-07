@@ -69,6 +69,24 @@ void main() {
     });
   });
   tearDown(() => messenger.setMockMethodCallHandler(channel, null));
+  testWidgets('disabled integration never starts the native receiver', (
+    tester,
+  ) async {
+    final db = BookmarkStore(NativeDatabase.memory());
+    try {
+      await tester.pumpWidget(
+        RevisitApp(openStore: () => db, openLink: (_) async => true),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('No bookmarks saved'), findsOneWidget);
+      expect(find.byType(WindowsIntegrationStatus), findsNothing);
+      expect(calls, isEmpty);
+    } finally {
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+    }
+    expect(calls, isEmpty);
+  });
   test(
     'browser chooser channel reads SQLite and opens only the requested context',
     () async {

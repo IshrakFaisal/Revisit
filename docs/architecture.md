@@ -3,6 +3,8 @@
 ## Shared application
 One Flutter/Dart project for Android and Windows. Constructor injection and Flutter built-in state primitives; no extra state framework.
 
+Production startup selects Windows integration with `Platform.isWindows` and passes the capability into `RevisitApp`. The shared UI honors that injected value without checking the host OS again, so mocked Windows channel/session tests run on Linux as well as Windows. Integration defaults to disabled when constructing the UI directly. This keeps Android startup free of Windows channel requests.
+
 Dependencies: Drift/SQLite through drift, drift_flutter, path_provider; url_launcher. Development: drift_dev and build_runner. Windows notifications use a small Windows SDK adapter behind a platform channel, with a bounded native worker. The previously proposed flutter_local_notifications dependency was not installed: its inspected Windows implementation calls the OS synchronously through FFI, which does not directly satisfy final authorization's prompt-return contract. See milestone-5.md. No dependency or lockfile change was needed for Gate A.
 
 Milestone 2 implements the startup read and the first bookmark table. Drift opens the database in application-support storage. The startup read distinguishes loading, an empty or populated library, and an initialization error with retry. A typed insert and lookup support the persistence tests. The store enforces canonical URL uniqueness. URL validation and canonicalization for user input enter with the capture workflow. Link launching and notification dependencies enter with their features.
