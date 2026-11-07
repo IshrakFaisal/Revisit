@@ -39,6 +39,8 @@ The extension's explicit Save this page to Revisit action and page/link context 
 
 When the user clicks a recognized X Bookmark or Facebook Save post control on a granted origin, the extension waits for visible site confirmation and identifies the associated post permalink. The in-page prompt offers Yes and No. No discards the pending candidate. Yes opens the same editor, with the source site selected as the default reminder trigger. Only a separate Save in the editor writes SQLite. On a later focused visit to that site, the existing reminder rules decide which saved item appears. Unknown or ambiguous layouts fail closed and use the explicit capture fallback.
 
+All in-page Revisit prompts appear at the top right of the viewport (16 px inset), as requested on 2026-11-07. They remain responsive to narrow windows.
+
 Capture sends a selected URL only after a user action. Automatic context events continue to carry only site context, IDs and timing. Automatic monitoring requires optional site permissions even when capture has temporary activeTab access. Capture links are limited to 3,072 ASCII encoded URL characters within the existing 4 KiB transport. Manual capture retains its existing 4,096-character limit.
 
 Closing the desktop app stops both delivery and capture reception. Minimized operation is the supported background workflow. Captures offered while another editor or routed detail is open receive a busy status in the app and require a fresh Save action after closing that view. No capture saves automatically.

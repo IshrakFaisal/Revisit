@@ -87,7 +87,7 @@
     const host = document.createElement("div");
     const root = host.attachShadow({ mode: "closed" });
     const style = document.createElement("style");
-    style.textContent = `:host{all:initial;position:fixed;right:16px;bottom:16px;z-index:2147483647}
+    style.textContent = `:host{all:initial;position:fixed;right:16px;top:16px;z-index:2147483647}
       section{box-sizing:border-box;width:min(320px,calc(100vw - 32px));background:#fff;color:#172c23;
       font:15px/1.45 system-ui;padding:16px;border:1px solid #60796e;border-radius:12px;
       box-shadow:0 4px 20px #0003} p{margin:0 0 10px} button{font:inherit;margin:0 8px 0 0;
