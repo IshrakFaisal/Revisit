@@ -8,7 +8,7 @@ const code = readFileSync(new URL("../site-save.js", import.meta.url), "utf8");
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
 // Small DOM fixture for the actual isolated content script. No site requests.
-function fixture(source) {
+function fixture(source, captureReply = "Draft sent to Revisit.") {
   const isX = source === "x";
   const url = isX ? "https://x.com/person/status/123" : "https://www.facebook.com/person/posts/123";
   let click, observer, onMessage, saved = false;
@@ -44,7 +44,7 @@ function fixture(source) {
     document: { body, visibilityState: "visible", createElement: () => new Element(),
       addEventListener: (_, callback) => { click = callback; }, querySelectorAll: () => saved ? [notice] : [] },
     MutationObserver: class { constructor(callback) { observer = callback; } observe() {} disconnect() {} },
-    chrome: { runtime: { id: "revisit", onMessage: { addListener: callback => { onMessage = callback; } }, sendMessage: async message => { messages.push(message); return message.kind === "canOfferSiteSave" ? true : "Draft sent to Revisit."; } } },
+    chrome: { runtime: { id: "revisit", onMessage: { addListener: callback => { onMessage = callback; } }, sendMessage: async message => { messages.push(message); return message.kind === "canOfferSiteSave" ? true : captureReply; } } },
   });
   return {
     url, messages, opened,
@@ -94,8 +94,17 @@ for (const source of ["x", "facebook"]) {
     await genuine.panel().children[1].events.click({ isTrusted: true });
     assert.equal(genuine.messages[1].kind, "confirmSiteSave");
     assert.equal(genuine.messages[1].url, genuine.url);
+    assert.equal(genuine.panel(), undefined, "successful capture hands off to the app without a second message");
   });
 }
+
+test("capture failure keeps the prompt with its error and allows retry", async () => {
+  const page = fixture("x", "Not saved. Open Revisit and try again.");
+  page.start(); page.confirm(); await tick();
+  await page.panel().children[1].events.click({ isTrusted: true });
+  assert.match(page.panel().children[0].textContent, /Not saved/);
+  assert.equal(page.panel().children[1].disabled, false);
+});
 
 test("social observer registers only granted X and Facebook origins", async () => {
   let scripts;

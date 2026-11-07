@@ -22,7 +22,17 @@ int main(int argc, char** argv) {
     status = "receiver_unavailable";
     if (pipe != INVALID_HANDLE_VALUE) {
       std::string reply;
-      if (revisit::trusted_desktop_server(pipe) && revisit::send_pipe_frame(pipe, input) &&
+      const bool trusted = revisit::trusted_desktop_server(pipe);
+      if (trusted && !capture.kind.empty()) {
+        // The browser launched this host after an explicit Save/Yes click.
+        // Transfer foreground permission only to the authenticated receiver;
+        // automatic arrivals never grant it. Windows may still deny focus.
+        ULONG receiver = 0;
+        if (GetNamedPipeServerProcessId(pipe, &receiver) && receiver != 0) {
+          AllowSetForegroundWindow(receiver);
+        }
+      }
+      if (trusted && revisit::send_pipe_frame(pipe, input) &&
           revisit::receive_pipe_frame(pipe, reply, event.browser_prompt ? 4500 : 2000)) {
         if (reply == "{\"status\":\"accepted\"}" || reply == "{\"status\":\"invalid_event\"}" || reply == "{\"status\":\"busy\"}" ||
             (event.needs_browser_update() && reply == "{\"status\":\"upgrade_required\"}") ||

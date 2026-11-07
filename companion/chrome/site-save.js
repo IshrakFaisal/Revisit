@@ -77,7 +77,7 @@
     showPrompt(page, "Add this post to Revisit?", async () => {
       const status = await chrome.runtime.sendMessage({ kind: "confirmSiteSave", url });
       return status?.startsWith("Draft sent")
-        ? { message: "Draft sent. Open Revisit to set priority and save.", done: true }
+        ? { close: true }
         : { message: status ?? "Open Revisit and try again." };
     });
   }
@@ -113,6 +113,7 @@
       yes.disabled = true;
       try {
         const result = await accept();
+        if (result?.close) return close();
         if (result?.navigate) {
           close();
           location.assign(result.navigate);

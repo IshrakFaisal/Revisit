@@ -2,6 +2,10 @@
 
 Never disable tests or weaken assertions for green results. Fake events/clocks belong only in automated tests.
 
+## Capture handoff — 2026-11-07
+
+The user requested direct app presentation after Add/Yes, without a second draft message. The host transfers foreground permission to the authenticated desktop receiver only for explicit captures, and the content script closes the successful Add prompt. Failure remains visible/retryable. `node --test companion/chrome/test/*.test.js companion/windows_host/test/desktop_host.test.mjs` passed 29 checks; `./tool/build-proof.ps1 -VsTools 'D:\RevisitTools\BuildTools\VC\Auxiliary\Build\vcvars64.bat'` built successfully and passed CTest 5/5. Actual focus transfer remains subject to Windows and needs a live click check.
+
 ## Social reminder readiness correction — 2026-11-07
 
 Three new worker regressions failed against v0.5.0: a busy Save prompt consumed the visit, a loading-document injection error could not recover, and page-readiness expiry had no useful status. Version 0.5.1 checks readiness before marking the visit attempted and bounds pre-handoff checks to 45 seconds. A fourth regression verifies navigation/permission cancellation. No native request is replayed; existing cooldowns are unchanged.
